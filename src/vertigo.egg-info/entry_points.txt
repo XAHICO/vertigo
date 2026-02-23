@@ -1,0 +1,4 @@
+[console_scripts]
+vert = vertigo.cli:__main__
+vertigo = vertigo.cli:__main__
+vtg = vertigo.cli:__main__
