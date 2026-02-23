@@ -137,7 +137,7 @@ Performs a deep, authenticated BFS crawl with ML-assisted analysis of every page
 ## Installation
 
 ```bash
-pip install vertigo
+pip install xahico-vertigo
 ```
 
 **Runtime dependencies:**
