@@ -271,7 +271,7 @@ vertigo scan https://app.example.com | jq '.summary'
 
 ## Licence
 
-Vertigo is proprietary software. A valid `XAHICO_VERTIGO_API_KEY` is required for ML-backed features (authentication and scan). Fingerprinting is available without a key.
+Vertigo is proprietary software. A valid `XAHICO_VERTIGO_API_KEY` is required for ML-backed features (authentication and scan). Fingerprinting and unauthenticated scanning are available without a key.
 
 - Licences are available at [vertigo.xahico.com](https://vertigo.xahico.com)
 - Keys carry an expiry date and are validated against the XAHICO cloud on each invocation
