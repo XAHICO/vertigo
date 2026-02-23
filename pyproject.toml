@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vertigo"
+version = "2.0.0"
+description = "Vertigo Web Application Security Auditing & Testing Suite"
+authors = [{name="XAHICO Corporation", email="contact@xahico.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Proprietary"}
+dependencies = [
+    # Browser automation
+    "playwright>=1.40.0,<2.0.0",
+
+    # HTML parsing
+    "beautifulsoup4>=4.12.0,<5.0.0",
+
+    # NOTE: scikit-learn / lightgbm / numpy are intentionally removed.
+    # All ML inference is handled by the XAHICO cloud service; no model
+    # artefacts are stored or read on the client machine.
+]
+
+[project.scripts]
+vertigo = "vertigo.cli:__main__"
+
+# training_data is intentionally excluded from the package manifest.
+# All training data lives in the XAHICO Google Cloud Storage bucket and is
+# never distributed to end-users.
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
