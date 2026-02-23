@@ -12,11 +12,11 @@
 **Web Application Security Auditing & Testing Suite**
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org)
-[![License: Proprietary](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](https://xahico.com/vertigo)
+[![License: Proprietary](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](https://vertigo.xahico.com)
 [![Cloud ML](https://img.shields.io/badge/ML-cloud--backed-8A2BE2?style=flat-square&logo=google-cloud)](https://vertigo.xahico.com)
 [![Status: Active](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)]()
 
-[**Documentation**](https://vertigo.xahico.com/docs) · [**Get a Key**](https://xahico.com/vertigo) · [**Support**](https://xahico.com/support)
+[**Documentation**](https://vertigo.xahico.com/docs) · [**Get a Key**](https://vertigo.xahico.com) · [**Support**](https://xahico.com/support)
 
 </div>
 
@@ -26,7 +26,7 @@
 
 Vertigo is a professional web application security auditing tool built for penetration testers and security engineers. It combines a real Chromium browser engine with cloud-hosted machine learning to discover, classify, and score the attack surface of modern web applications — including SPAs, authenticated portals, and API-heavy backends.
 
-> Vertigo is offered as a licensed product. Cloud ML features require a valid API key from [xahico.com/vertigo](https://xahico.com/vertigo). Core crawling works without a key.
+> Vertigo is offered as a licensed product. Cloud ML features require a valid API key from [vertigo.xahico.com](https://vertigo.xahico.com). Core crawling works without a key.
 
 ---
 
@@ -156,7 +156,7 @@ go install github.com/projectdiscovery/katana/cmd/katana@latest
 export XAHICO_VERTIGO_API_KEY="XAHICO-your-key-here"
 ```
 
-Get a key at [xahico.com/vertigo](https://xahico.com/vertigo). Fingerprinting works without a key; authentication and scanning require one.
+Get a key at [vertigo.xahico.com](https://vertigo.xahico.com). Fingerprinting works without a key; authentication and scanning require one.
 
 ---
 
@@ -273,7 +273,7 @@ vertigo scan https://app.example.com | jq '.summary'
 
 Vertigo is proprietary software. A valid `XAHICO_VERTIGO_API_KEY` is required for ML-backed features (authentication and scan). Fingerprinting is available without a key.
 
-- Licences are available at [xahico.com/vertigo](https://xahico.com/vertigo)
+- Licences are available at [vertigo.xahico.com](https://vertigo.xahico.com)
 - Keys carry an expiry date and are validated against the XAHICO cloud on each invocation
 - To revoke a key, contact [support@xahico.com](mailto:support@xahico.com)
 
