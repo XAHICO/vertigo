@@ -61,7 +61,7 @@ Vertigo is a modern AI-powered web application security auditing tool built for 
 │   └─────────────────┘  └─────────────────┘  └───────────────┘  │
 │                                                                 │
 │                        ┌─────────────────────────────────────┐  │
-│                        │  Sample Ingestion + Gemini QA       │  │
+│                        │  Sample Ingestion + QA              │  │
 │                        │  (continuous model improvement)     │  │
 │                        └─────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -227,7 +227,7 @@ The following ML models run in the XAHICO cloud and are invoked automatically du
 | Page Classifier | LightGBM | Classify page type from content + structure | Page text, URL, title, 14 DOM features | `page_type`, `confidence` |
 | Anomaly Detector | Isolation Forest | Score HTTP responses for statistical anomalies | 20 response features | `score` (0–1, higher = more anomalous) |
 
-**Model improvement:** every classified form and scanned response is optionally submitted to the cloud (after Gemini-based quality verification) to continuously improve model accuracy. Submissions are controlled server-side and never include credentials or sensitive payload content.
+**Model improvement:** every classified form and scanned response is optionally submitted to the cloud (after quality verification) to continuously improve model accuracy. Submissions are controlled server-side and never include credentials or sensitive payload content.
 
 **Privacy:** the client never transmits raw page HTML, credentials, or cookie values to the cloud. Only derived feature vectors and metadata are sent.
 
