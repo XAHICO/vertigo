@@ -24,7 +24,7 @@
 
 ## Overview
 
-Vertigo is a professional web application security auditing tool built for penetration testers and security engineers. It combines a real Chromium browser engine with cloud-hosted machine learning to discover, classify, and score the attack surface of modern web applications — including SPAs, authenticated portals, and API-heavy backends.
+Vertigo is a modern AI-powered web application security auditing tool built for penetration testers and security engineers. It combines a real Chromium browser engine with cloud-hosted machine learning to discover, classify, and score the attack surface of modern web applications — including SPAs, authenticated portals, and API-heavy backends.
 
 > Vertigo is offered as a licensed product. Cloud ML features require a valid API key from [vertigo.xahico.com](https://vertigo.xahico.com). Core crawling works without a key.
 
@@ -60,10 +60,10 @@ Vertigo is a professional web application security auditing tool built for penet
 │   │  (RandomForest) │  │  (LightGBM)     │  │  (IsoForest)  │  │
 │   └─────────────────┘  └─────────────────┘  └───────────────┘  │
 │                                                                 │
-│   ┌─────────────────┐  ┌─────────────────────────────────────┐  │
-│   │  Secret Manager │  │  Sample Ingestion + Gemini QA       │  │
-│   │  (API key auth) │  │  (continuous model improvement)     │  │
-│   └─────────────────┘  └─────────────────────────────────────┘  │
+│                        ┌─────────────────────────────────────┐  │
+│                        │  Sample Ingestion + Gemini QA       │  │
+│                        │  (continuous model improvement)     │  │
+│                        └─────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
