@@ -9,7 +9,7 @@
   ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝  ╚═════╝
 ```
 
-**Web Application Security Auditing & Testing Suite**
+**Web Application Security Auditing Suite**
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue?style=flat-square&logo=python)](https://www.python.org)
 [![License: Proprietary](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](https://vertigo.xahico.com)
@@ -24,9 +24,9 @@
 
 ## Overview
 
-Vertigo is a modern AI-powered web application security auditing tool built for penetration testers and security engineers. It combines a real Chromium browser engine with cloud-hosted machine learning to discover, classify, and score the attack surface of modern web applications — including SPAs, authenticated portals, and API-heavy backends.
+Vertigo is an AI-powered web application security auditing tool built for security engineers and audit teams. It combines a real Chromium browser engine with cloud-hosted machine learning to discover, classify, and score the full asset surface of modern web applications — including single-page applications, authenticated portals, and API-heavy backends.
 
-> Vertigo is offered as a licensed product. Cloud ML features require a valid API key from [vertigo.xahico.com](https://vertigo.xahico.com). Core crawling works without a key.
+> Vertigo is a licensed product. Cloud ML features require a valid API key from [vertigo.xahico.com](https://vertigo.xahico.com). Core crawling and fingerprinting work without a key.
 
 ---
 
@@ -50,7 +50,7 @@ Vertigo is a modern AI-powered web application security auditing tool built for 
           │               │                      │
           └───────────────┴──────────────────────┘
                           │
-                          ▼  HTTPS
+                          ▼  HTTPS  (feature vectors only — no raw HTML)
 ┌─────────────────────────────────────────────────────────────────┐
 │               XAHICO Cloud ML Service (GCP)                     │
 │                                                                 │
@@ -78,9 +78,9 @@ Vertigo is a modern AI-powered web application security auditing tool built for 
 Vertigo uses a real Chromium browser to log into web applications — not HTTP replay, not hardcoded form selectors.
 
 - **ML-guided form detection** — the cloud classifier identifies login forms from DOM structure and text features, achieving reliable detection even on custom-styled or JavaScript-rendered auth pages
-- **Multi-strategy submission** — tries all discovered submit triggers with proper event dispatch to satisfy JS-validated forms
+- **Multi-strategy submission** — tries all discovered submit triggers with proper event dispatch to handle JS-validated forms
 - **Session capture** — extracts cookies, localStorage, sessionStorage, and request headers into a portable session object for use by subsequent commands
-- **Success scoring** — a weighted multi-signal detector evaluates URL changes, cookie mutations, keyword presence, and form disappearance to determine whether authentication actually succeeded
+- **Success scoring** — a weighted multi-signal detector evaluates URL changes, cookie mutations, keyword presence, and form disappearance to determine whether authentication succeeded
 - **MFA / CAPTCHA detection** — surfaces MFA prompts and CAPTCHA challenges rather than silently failing
 
 ### Fingerprinting (`vertigo fingerprint`)
@@ -96,41 +96,27 @@ Generates a stable, content-addressed fingerprint of a web application's asset s
 
 Performs a deep, authenticated BFS crawl with ML-assisted analysis of every page visited.
 
-**Endpoint discovery:**
+**Endpoint discovery methods:**
 
 | Method | What it finds |
 |---|---|
 | Browser navigation | Visited pages and redirect chains |
 | Static code analysis | API paths in JS source (`fetch`, `axios`, XHR, jQuery) |
 | Runtime interception | Live network requests via fetch/XHR instrumentation |
-| Passive API observation | Normalized API call shapes with auth token detection |
+| Passive API observation | Normalised API call shapes with auth token detection |
 | Endpoint registry probe | `/api/v1/schema`, `/.well-known/api-endpoints`, `/api/v1/exports` |
 | Interaction simulation | Clicks, scrolls, and toggle interactions to trigger lazy API calls |
 
-**ML-powered classification (cloud):**
+**Cloud ML classification:**
 
 - **Page classifier** (LightGBM) — labels each visited page as `login`, `dashboard`, `admin`, `profile`, `api`, `form`, `list`, `detail`, `error`, or `static` from combined text and structural features
-- **Anomaly detector** (Isolation Forest) — scores each HTTP response for statistical anomalies across 20 features including status codes, timing, headers, and DOM structure; flags responses with `score > 0.7`
+- **Anomaly detector** (Isolation Forest) — scores each HTTP response for statistical anomalies across 20 features including status codes, timing, headers, and DOM structure; flags responses with a score above 0.7
 
 **Subdomain intelligence:**
 
-- Detects subdomains during link extraction by comparing against the root domain (e.g., `api.example.com` discovered while crawling `app.example.com`)
+- Detects subdomains during link extraction by comparing against the root domain (e.g. `api.example.com` discovered while crawling `app.example.com`)
 - Deduplicates subdomain discoveries across the full crawl
 - Optional controlled subdomain scanning via `-sub-depth` (default: detect only, do not scan)
-
-**Output includes:**
-
-```json
-{
-  "metadata": { "status": "COMPLETE", "authenticated": true, "stats": { ... } },
-  "asset_fingerprint": "sha256...",
-  "endpoints": [ { "url": "/api/users", "method": "GET", "page_type": "api", "anomaly_score": 0.12, ... } ],
-  "forms": [ { "action": "/login", "method": "POST", "fields": [...] } ],
-  "dynamic_endpoints": [ { "url": "/api/v1/users/{*}", "method": "POST", "discovered_via": "fetch" } ],
-  "subdomains": { "discovered": ["api.example.com"], "scanned": [], "sub_depth": 0 },
-  "summary": { "total_endpoints": 48, "anomalies": 2, "subdomains_discovered": 3 }
-}
-```
 
 ---
 
@@ -165,40 +151,69 @@ Get a key at [vertigo.xahico.com](https://vertigo.xahico.com). Fingerprinting wo
 ### Authenticate
 
 ```bash
-# Basic auth
-vertigo auth https://app.example.com -username admin -password secret -output session.json
+# Basic authentication
+vertigo auth https://app.example.com \
+  -username admin \
+  -password secret \
+  -output session.json
 
-# With custom entry point
-vertigo auth https://app.example.com -entry /login -username admin -password secret
+# With a custom entry point
+vertigo auth https://app.example.com \
+  -entry /login \
+  -username admin \
+  -password secret
 
-# Show browser window (useful for debugging auth flows)
-vertigo auth https://app.example.com -no-headless -username admin -password secret
+# Show the browser window (useful for debugging auth flows)
+vertigo auth https://app.example.com \
+  -no-headless \
+  -username admin \
+  -password secret
 ```
 
 ### Fingerprint
 
 ```bash
 # Unauthenticated (no key required)
-vertigo fingerprint https://app.example.com -depth 3 -limit 50
+vertigo fingerprint https://app.example.com \
+  -depth 3 \
+  -limit 50
 
 # Authenticated fingerprint
-vertigo fingerprint https://app.example.com -login /login -username admin -password secret -output fingerprint.json
+vertigo fingerprint https://app.example.com \
+  -login /login \
+  -username admin \
+  -password secret \
+  -output fingerprint.json
 ```
 
 ### Scan
 
 ```bash
 # Unauthenticated scan
-vertigo scan https://app.example.com -depth 5 -limit 100
+vertigo scan https://app.example.com \
+  -depth 5 \
+  -limit 100
 
 # Authenticated scan
-vertigo scan https://app.example.com -login /login -username admin -password secret -output scan.json
+vertigo scan https://app.example.com \
+  -login /login \
+  -username admin \
+  -password secret \
+  -output scan.json
 
 # With subdomain scanning (2 levels deep into each discovered subdomain)
-vertigo scan https://app.example.com -sub-depth 2 -output scan.json
+vertigo scan https://app.example.com \
+  -sub-depth 2 \
+  -output scan.json
 
 # Deep authenticated scan with debug output
-vertigo scan https://app.example.com --debug -login /login -username admin -password secret -depth 10 -limit 500
+vertigo scan https://app.example.com \
+  --debug \
+  -login /login \
+  -username admin \
+  -password secret \
+  -depth 10 \
+  -limit 500
 ```
 
 ### Common flags
@@ -217,61 +232,118 @@ vertigo scan https://app.example.com --debug -login /login -username admin -pass
 
 ---
 
-## Cloud ML
+## Cloud ML Models
 
-The following ML models run in the XAHICO cloud and are invoked automatically during scans:
+All models run in the XAHICO cloud and are invoked automatically during scans. No model files are stored or executed locally.
 
 | Model | Type | Purpose | Input | Output |
 |---|---|---|---|---|
-| Form Classifier | Random Forest + TF-IDF | Identify login forms from DOM text | Form field labels, placeholders, button text | `is_login_form`, `confidence` |
-| Page Classifier | LightGBM | Classify page type from content + structure | Page text, URL, title, 14 DOM features | `page_type`, `confidence` |
+| Form Classifier | Random Forest + TF-IDF | Identify login forms from DOM text | Field labels, placeholders, button text | `is_login_form`, `confidence` |
+| Page Classifier | LightGBM | Classify page type from content and structure | Page text, URL, title, 14 DOM features | `page_type`, `confidence` |
 | Anomaly Detector | Isolation Forest | Score HTTP responses for statistical anomalies | 20 response features | `score` (0–1, higher = more anomalous) |
 
-**Model improvement:** every classified form and scanned response is optionally submitted to the cloud (after quality verification) to continuously improve model accuracy. Submissions are controlled server-side and never include credentials or sensitive payload content.
+**Model improvement:** every classified form and scanned response is optionally submitted to the cloud (after quality verification) to improve model accuracy over time. Submissions are controlled server-side.
 
 **Privacy:** the client never transmits raw page HTML, credentials, or cookie values to the cloud. Only derived feature vectors and metadata are sent.
 
 ---
 
-## Debug output
+## Output Format
 
-All debug output is suppressed unless `--debug` is passed. When enabled, structured log lines are written to stderr:
+All commands output JSON to stdout or to a file specified via `-output`. The schema is stable across patch versions — fields may be added in minor releases but will not be removed.
 
+```json
+{
+  "metadata": {
+    "status": "COMPLETE",
+    "authenticated": true,
+    "duration_ms": 14823,
+    "stats": {
+      "urls_visited": 34,
+      "depth_reached": 5
+    }
+  },
+
+  "asset_fingerprint": "sha256:a3f8c1d...",
+
+  "endpoints": [
+    {
+      "url": "/api/v1/users",
+      "method": "GET",
+      "page_type": "api",
+      "anomaly_score": 0.12,
+      "discovered_via": "runtime_interception"
+    },
+    {
+      "url": "/admin/settings",
+      "method": "GET",
+      "page_type": "admin",
+      "anomaly_score": 0.88
+    }
+  ],
+
+  "forms": [
+    {
+      "action": "/login",
+      "method": "POST",
+      "fields": ["username", "password"]
+    }
+  ],
+
+  "dynamic_endpoints": [
+    {
+      "url": "/api/v1/users/{*}",
+      "method": "POST",
+      "discovered_via": "fetch"
+    }
+  ],
+
+  "subdomains": {
+    "discovered": ["api.example.com", "static.example.com"],
+    "scanned": [],
+    "sub_depth": 0
+  },
+
+  "summary": {
+    "total_urls": 34,
+    "total_endpoints": 48,
+    "total_forms": 4,
+    "dynamic_endpoints": 12,
+    "anomalies": 2,
+    "depth_reached": 5,
+    "subdomains_discovered": 3,
+    "subdomains_scanned": 0
+  }
+}
 ```
-14:32:01  DEBUG     vertigo.scan.crawler                    crawl_start  target='https://example.com'  depth=5  sub_depth=0
-14:32:01  DEBUG     vertigo.scan.js_analyzer                api_interceptors_installed
-14:32:02  DEBUG     vertigo.scan.crawler                    url_loaded  url='https://example.com/'  status=200  elapsed_ms=843
-14:32:02  DEBUG     vertigo.scan.crawler                    subdomain_discovered  host='api.example.com'
-14:32:03  DEBUG     vertigo.scan.page_classifier            page_classified  url='...'  type=dashboard  confidence=0.934
-14:32:04  DEBUG     vertigo.scan.anomaly_detector           anomaly_detected  score=0.8821  url='https://example.com/admin'
-14:32:05  DEBUG     vertigo.scan.crawler                    crawl_complete  status='COMPLETE'  urls=34  endpoints=58  anomalies=1
+
+Pipe to `jq` for quick inspection:
+
+```bash
+vertigo scan https://app.example.com | jq '.summary'
 ```
 
 ---
 
-## Output format
+## Debug Output
 
-All commands output JSON to stdout (or `-output <file>`). The schema is stable across patch versions; fields may be added but not removed in minor releases.
+All debug output is suppressed unless `--debug` is passed. When enabled, structured log lines are written to stderr — one `key=value` pair per field, compatible with any log aggregator.
 
 ```
-vertigo scan https://app.example.com | jq '.summary'
-{
-  "total_urls": 34,
-  "total_endpoints": 58,
-  "total_forms": 4,
-  "dynamic_endpoints": 12,
-  "anomalies": 1,
-  "depth_reached": 5,
-  "subdomains_discovered": 2,
-  "subdomains_scanned": 0
-}
+14:32:01  DEBUG  vertigo.scan.crawler           crawl_start          target='https://example.com'  depth=5  sub_depth=0
+14:32:01  DEBUG  vertigo.scan.js_analyzer       interceptors_installed
+14:32:02  DEBUG  vertigo.scan.crawler           url_loaded           url='https://example.com/'  status=200  elapsed_ms=843
+14:32:02  DEBUG  vertigo.scan.crawler           subdomain_discovered  host='api.example.com'
+14:32:03  DEBUG  vertigo.scan.page_classifier   page_classified      url='example.com/dashboard'  type=dashboard  confidence=0.934
+14:32:04  DEBUG  vertigo.scan.anomaly_detector  anomaly_detected     score=0.8821  url='https://example.com/admin'
+14:32:05  DEBUG  vertigo.scan.crawler           crawl_complete       status=COMPLETE  urls=34  endpoints=58  anomalies=1
 ```
 
 ---
 
 ## Licence
 
-Vertigo is proprietary software. A valid `XAHICO_VERTIGO_API_KEY` is required for ML-backed features (authentication and scan). Fingerprinting and unauthenticated scanning are available without a key.
+Vertigo is proprietary software. A valid `XAHICO_VERTIGO_API_KEY` is required for ML-backed features (authentication and deep scanning). Fingerprinting is available without a key.
 
 - Licences are available at [vertigo.xahico.com](https://vertigo.xahico.com)
 - Keys carry an expiry date and are validated against the XAHICO cloud on each invocation
@@ -280,5 +352,5 @@ Vertigo is proprietary software. A valid `XAHICO_VERTIGO_API_KEY` is required fo
 ---
 
 <div align="center">
-  Built by <a href="https://xahico.com">XAHICO Corporation</a> · <a href="https://vertigo.xahico.com">vertigo.xahico.com</a>
+  Built by <a href="https://xahico.com">XAHICO Corporation</a> &nbsp;·&nbsp; <a href="https://vertigo.xahico.com">vertigo.xahico.com</a>
 </div>
