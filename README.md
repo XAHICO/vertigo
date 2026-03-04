@@ -66,7 +66,7 @@ All ML inference runs exclusively in the XAHICO cloud. No model weights, trainin
 │  └────────────────────┘  └───────────────────┘  └──────────────────┘  │
 │                                                                        │
 │             ┌──────────────────────────────────────────┐              │
-│             │  Gemini-verified sample ingestion         │              │
+│             │  Human-verified sample ingestion         │              │
 │             │  (continuous model improvement)           │              │
 │             └──────────────────────────────────────────┘              │
 └────────────────────────────────────────────────────────────────────────┘
@@ -444,7 +444,7 @@ client.submit_sample(
 
 ## Cloud ML Models
 
-All inference is served from `vertigo.services.xahico.com`. Models are retrained continuously as new Gemini-verified samples are ingested.
+All inference is served from `vertigo.services.xahico.com`. Models are retrained continuously as new Human-verified samples are ingested.
 
 | Model | Algorithm | Task | Input |
 |---|---|---|---|
@@ -458,7 +458,7 @@ All inference is served from `vertigo.services.xahico.com`. Models are retrained
 
 ### Sample contribution
 
-Every vertigo client can contribute training samples to improve model quality. Samples are verified autonomously by Gemini before entering the training corpus — no manually curated labels required. Submission is fire-and-forget and will never raise an exception or disrupt your workflow.
+Every vertigo client can contribute training samples to improve model quality. Samples are verified before entering the training corpus — no manually curated labels required. Submission is fire-and-forget and will never raise an exception or disrupt your workflow.
 
 ---
 
