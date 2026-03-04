@@ -43,16 +43,16 @@ def _to_serializable(obj):
 # ── Auth / licence helpers ────────────────────────────────────────────────────
 
 def _get_api_key() -> str | None:
-    return os.environ.get("XAHICO_VERTIGO_API_KEY") or None
+    return os.environ.get("XAHICO_VERTIGO_LICENSE_KEY") or None
 
 
 def _require_api_key(operation: str) -> str:
     key = _get_api_key()
     if not key:
         print(
-            f"\n[vertigo] ERROR: '{operation}' requires a valid XAHICO API key.\n"
-            f"  Set the environment variable XAHICO_VERTIGO_API_KEY and retry.\n"
-            f"  To obtain a key visit https://xahico.com/vertigo\n",
+            f"\n[vertigo] ERROR: '{operation}' requires a valid XAHICO licence key.\n"
+            f"  Set the environment variable XAHICO_VERTIGO_LICENSE_KEY and retry.\n"
+            f"  Run 'vertigo init' to set it interactively, or visit https://xahico.com/vertigo\n",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -113,6 +113,25 @@ def __main__():
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # ── init ──────────────────────────────────────────────────────────────────
+    sp = subparsers.add_parser(
+        "init",
+        help="Save your XAHICO licence key to the current shell profile",
+    )
+    sp.add_argument(
+        "--key",
+        type=str,
+        default=None,
+        metavar="KEY",
+        help="Licence key to store (omit to be prompted interactively)",
+    )
+    sp.add_argument(
+        "--validate",
+        action="store_true",
+        default=False,
+        help="Validate the key against the XAHICO cloud before saving",
+    )
+
     # ── auth ──────────────────────────────────────────────────────────────────
     sp = subparsers.add_parser("auth", help="Authenticate to a target web host")
     sp.add_argument("target", type=str)
@@ -167,9 +186,11 @@ def __main__():
     debug = getattr(args, "debug", False)
     _configure_logging(debug)
 
-    logger.debug("startup  command=%r  target=%s  debug=%s", args.command, args.target, debug)
+    logger.debug("startup  command=%r  debug=%s", args.command, debug)
 
-    if args.command == "auth":
+    if args.command == "init":
+        sys.exit(cmd_init(args))
+    elif args.command == "auth":
         sys.exit(cmd_auth(args))
     elif args.command == "fingerprint":
         sys.exit(cmd_fingerprint(args))
@@ -179,7 +200,107 @@ def __main__():
 
 # ── Command implementations ───────────────────────────────────────────────────
 
-def cmd_auth(args) -> int:
+def cmd_init(args) -> int:
+    """
+    Interactively store XAHICO_VERTIGO_LICENSE_KEY in the user's shell profile.
+
+    Writes an export line to ~/.bashrc (Linux/macOS bash), ~/.zshrc (zsh), and
+    ~/.profile as a fallback so the key is available in every new terminal.
+    """
+    import getpass
+    import platform
+    import pathlib
+    import re
+
+    key = args.key
+    if not key:
+        try:
+            key = getpass.getpass("Enter your XAHICO Vertigo licence key: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n[vertigo] init cancelled.", file=sys.stderr)
+            return 1
+
+    if not key:
+        print("[vertigo] ERROR: No licence key provided.", file=sys.stderr)
+        return 1
+
+    # Optional live validation
+    if args.validate:
+        print("[vertigo] Validating key against XAHICO cloud …", end=" ", flush=True)
+        try:
+            from .cloud_client import CloudClient
+            client = CloudClient(api_key=key, debug=False)
+            result = client.validate_license()
+            if not result.get("valid", False):
+                print("FAILED")
+                print(
+                    f"[vertigo] ERROR: Key rejected — {result.get('reason', 'unknown')}\n"
+                    f"  Visit https://xahico.com/vertigo to check your licence.",
+                    file=sys.stderr,
+                )
+                return 1
+            expires = result.get("expires_at", "")
+            plan    = result.get("plan", "")
+            print("OK")
+            if expires:
+                print(f"[vertigo]   Plan: {plan or 'standard'}  ·  Expires: {expires}")
+        except CloudError as exc:
+            print("ERROR")
+            print(f"[vertigo] WARNING: Could not reach XAHICO cloud to validate: {exc}", file=sys.stderr)
+            print("[vertigo] Saving key anyway — validation can be retried later.", file=sys.stderr)
+
+    export_line = f'export XAHICO_VERTIGO_LICENSE_KEY="{key}"'
+
+    home = pathlib.Path.home()
+    profiles: list[pathlib.Path] = []
+
+    if platform.system() == "Windows":
+        # On Windows we write a .env helper and advise the user
+        env_file = home / ".xahico_vertigo.env"
+        env_file.write_text(f"XAHICO_VERTIGO_LICENSE_KEY={key}\n", encoding="utf-8")
+        print(f"\n[vertigo] Licence key saved to {env_file}")
+        print(
+            "[vertigo] On Windows, add the key to your user environment variables:\n"
+            "  setx XAHICO_VERTIGO_LICENSE_KEY \"<your-key>\"\n"
+            "  (or paste the key into System → Environment Variables in the Control Panel)"
+        )
+        return 0
+
+    # Unix: write to whichever shell profiles exist (create if missing)
+    candidates = [home / ".bashrc", home / ".zshrc", home / ".profile"]
+    for p in candidates:
+        profiles.append(p)
+
+    written: list[str] = []
+    for profile in profiles:
+        try:
+            existing = profile.read_text(encoding="utf-8") if profile.exists() else ""
+            # Remove any previous vertigo key line to avoid duplicates
+            lines = [
+                ln for ln in existing.splitlines()
+                if "XAHICO_VERTIGO_LICENSE_KEY" not in ln
+            ]
+            lines.append(export_line)
+            profile.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            written.append(str(profile))
+        except OSError as exc:
+            logger.debug("init: could not write to %s: %s", profile, exc)
+
+    if not written:
+        print(
+            "[vertigo] WARNING: Could not write to any shell profile.\n"
+            f"  Add the following line manually:\n    {export_line}",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"\n[vertigo] Licence key saved to: {', '.join(written)}")
+    print(f"[vertigo] Reload your shell or run:\n  export XAHICO_VERTIGO_LICENSE_KEY=\"{key}\"")
+    print("[vertigo] Run 'vertigo init --validate --key <KEY>' to verify your key at any time.")
+    return 0
+
+
+
     _require_api_key("auth")
     client = get_client(debug=args.debug)
     _validate_license(client, "auth")
