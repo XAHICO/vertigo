@@ -17,7 +17,7 @@ logger = logging.getLogger("vertigo.cloud")
 
 # ── Endpoint baked into the package at release time ──────────────────────────
 # Update this URL when you deploy a new Cloud Function revision.
-_CLOUD_ENDPOINT = "https://vertigo-ml-73726055593.us-central1.run.app/"
+_CLOUD_ENDPOINT = "https://vertigo.services.xahico.com/"
 _REQUEST_TIMEOUT = 15  # seconds
 _MAX_RETRIES = 2
 
@@ -40,7 +40,7 @@ class CloudClient:
     Parameters
     ----------
     api_key : str | None
-        XAHICO_VERTIGO_API_KEY.  If *None* only unauthenticated endpoints
+        XAHICO_VERTIGO_LICENSE_KEY.  If *None* only unauthenticated endpoints
         are reachable (sample submission only).
     debug : bool
         When *True* the client emits structured DEBUG log lines for every
@@ -223,6 +223,6 @@ def get_client(debug: bool = False) -> CloudClient:
     """Return (or create) the process-wide CloudClient singleton."""
     global _client
     if _client is None:
-        api_key = os.environ.get("XAHICO_VERTIGO_API_KEY") or None
+        api_key = os.environ.get("XAHICO_VERTIGO_LICENSE_KEY") or None
         _client = CloudClient(api_key=api_key, debug=debug)
     return _client
